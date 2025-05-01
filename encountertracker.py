@@ -103,13 +103,13 @@ def clear_combat(root: tk.Tk,
 def save_chars(root: tk.Tk,
                enc_state: encounter.EncounterStorage):
     pth = filedialog.asksaveasfilename(defaultextension='.enc', filetypes=[("encounter file", "*.enc")])
-    if pth != None:
+    if pth != None or pth != '':
         enc_state.save_state(pth)
 
 def load_chars(root: tk.Tk,
                enc_state: encounter.EncounterStorage):
     pth = filedialog.askopenfilename(defaultextension='.enc', filetypes=[("encounter file", "*.enc")])
-    if pth != None:
+    if pth != None or pth != '':
         enc_state.load_state(pth)
         # Update list
         lstbox: tk.Listbox = root.pack_slaves()[0].pack_slaves()[1]
