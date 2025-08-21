@@ -5,6 +5,7 @@ class EncounterStorage:
     def __init__(self):
         self.characters = [] # Displayed on left side
         self.combatants = [] # Displayed on right side
+        self.enemyStatus = [] # Status recorded by enemy manager
         self.cur_combat = 0
 
     def next_turn(self):

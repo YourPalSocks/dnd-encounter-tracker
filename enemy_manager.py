@@ -1,14 +1,16 @@
 import tkinter as tk
+import tkinter.simpledialog
 
 class EnemyManagerWindow(tk.Tk):
     def __init__(self, 
-                 enemy_name: str, 
-                 max_health: int,
-                 ac: int):
-        self.enemy_name = enemy_name
-        self.hp_max = max_health
-        self.ac = ac
+                input_dict: dict) :
+        self.enemy_name = input_dict['enemy_name']
+        self.hp_max = input_dict['max_health']
+        self.ac = input_dict['ac']
         super().__init__()
+        self._setup()
+        
+    def _setup(self):
         # Set up window
         self.geometry('400x250')
         self.title(f'{self.enemy_name} Manager')
@@ -34,7 +36,7 @@ class EnemyManagerWindow(tk.Tk):
         self.infoFrame.grid(row=0, column=0, padx=(10, 10), pady=(5,5), sticky='nsew')
 
         # Frame for individual enemies
-
+        # TODO: Scrollbar
         self.enemyFrame = tk.Frame(self)
         self.enemyFrame.grid(row=0, column=1, padx=(10, 10), pady=(5,5), sticky='nsew')
         self.enemyFrame.update_idletasks()  # Ensure geometry info is updated
@@ -48,27 +50,34 @@ class EnemyManagerWindow(tk.Tk):
         self.mainloop()
 
     def _update_enemy_selection(self, amt: int):
-        # Store old
         old_val = self.enemyNum.get()
+        # Check bound
+        if old_val + amt < 0:
+            return
         self.enemyNum.set(old_val + amt)
         if old_val < self.enemyNum.get():
             self._create_enemy_widget()
         else:
             pass
-            # Remove
+            # TODO: Remove
 
     def _create_enemy_widget(self):
         enemy_widget = tk.Frame(master=self.enemyFrame)
         enemyHealth = tk.IntVar(master=self, value=self.hp_max)
-        # Embedded function to update local tk.IntVar
+        # Embedded functions to update local tk.IntVar
         def __update_health(hp_var, amt, max):
             hp_var.set(hp_var.get() + amt)
             if hp_var.get() > max:
                 hp_var.set(max)
             if hp_var.get() < 0:
                 hp_var.set(0)
+                
+        def __update_health_popup(hp_var, max):
+            res = tkinter.simpledialog.askinteger('Damage Input', 'Enter Damage Amt', initialvalue=0)
+            __update_health(hp_var, res, max)
         # Create components
         cur_health = tk.Label(master=enemy_widget, textvariable=enemyHealth)
+        cur_health.bind('<Double-1>', func=lambda e: __update_health_popup(enemyHealth, self.hp_max))
         btn_left = tk.Button(master=enemy_widget, text='-', command=lambda: __update_health(enemyHealth, -1, self.hp_max))
         btn_right = tk.Button(master=enemy_widget, text='+', command=lambda: __update_health(enemyHealth, 1, self.hp_max))
         # Configure
@@ -79,8 +88,4 @@ class EnemyManagerWindow(tk.Tk):
         cur_health.pack(side=tk.LEFT)
         btn_right.pack(side=tk.LEFT, padx=(20, 0))
         enemy_widget.pack(pady=5)
-
-
-if __name__ == '__main__':
-    EnemyManagerWindow("Goblin", 30, 15)
     
