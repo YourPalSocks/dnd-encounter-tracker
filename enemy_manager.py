@@ -2,6 +2,7 @@ import tkinter as tk
 import tkinter.simpledialog
 
 import active_encounter as encounter
+from verticalscrollwin import VerticalScrolledFrame
 
 
 class EnemyManagerWindow(tk.Tk):
@@ -45,9 +46,8 @@ class EnemyManagerWindow(tk.Tk):
         remove_enemy_button.pack(expand=True, fill=tk.X)
         self.infoFrame.grid(row=0, column=0, padx=(10, 10), pady=(5,5), sticky='nsew')
 
-        # Frame for individual enemies
-        # TODO: Scrollbar
-        self.enemyFrame = tk.Frame(self)
+        # Scrolling frame for individual enemies
+        self.enemyFrame = VerticalScrolledFrame(self)
         self.enemyFrame.grid(row=0, column=1, padx=(10, 10), pady=(5,5), sticky='nsew')
         self.enemyFrame.update_idletasks()  # Ensure geometry info is updated
         self.enemyFrame.config(width=150, height=200)
@@ -79,7 +79,7 @@ class EnemyManagerWindow(tk.Tk):
 
     def _create_enemy_widget(self, 
                              cur_hp: int = None):
-        enemy_widget = tk.Frame(master=self.enemyFrame)
+        enemy_widget = tk.Frame(master=self.enemyFrame.interior)
         enemyHealth = tk.IntVar(master=enemy_widget, value=cur_hp if cur_hp != None else self.hp_max)
         # Embedded functions to update local tk.IntVar
         def __update_health(hp_var, amt, max):
@@ -107,7 +107,7 @@ class EnemyManagerWindow(tk.Tk):
         enemy_widget.pack(pady=5)
         
     def _remove_enemy_widget(self):
-        children = self.enemyFrame.winfo_children()
+        children = self.enemyFrame.interior.winfo_children()
         # Check if there's an enemy with 0 HP
         for u_idx in range(len(self._get_unit_health())):
             if self._get_unit_health()[u_idx] == 0:
@@ -116,8 +116,8 @@ class EnemyManagerWindow(tk.Tk):
         children[u_idx].destroy()
         
     def _get_unit_health(self):
-        return [self.enemyFrame.winfo_children()[i].winfo_children()[0].cget('text') 
-              for i in range(len(self.enemyFrame.winfo_children()))]
+        return [self.enemyFrame.interior.winfo_children()[i].winfo_children()[0].cget('text') 
+              for i in range(len(self.enemyFrame.interior.winfo_children()))]
 
     def _serialize(self):
         this_status = {
