@@ -34,6 +34,10 @@ def add_to_combat(root: tk.Tk,
                   selected_idx: int,
                   enc_state: encounter.EncounterStorage):
     p = enc_state.characters[selected_idx]
+    # Check if already in combatants
+    if any(combatant['Name'] == p for combatant in enc_state.combatants):
+        messagebox.showwarning('Already in Combat', f'{p} is already in the combat list.')
+        return
     init = simpledialog.askinteger('Add to Combat', f'Enter Initiative for {p}')
     if init != None:
         enc_state.add_combatant(p, init)
@@ -77,16 +81,19 @@ def start_next_turn(root: tk.Tk,
                 lstbox.itemconfig(idx, bg='yellow')
             idx += 1
 
-def display_selected_init(root: tk.Tk,
-                          selected_idx: int,
+def display_selected_init(listbox: tk.Listbox,
                           enc_state: encounter.EncounterStorage):
+    if len(listbox.curselection()) == 0:
+        return
+    selected_idx = listbox.curselection()[0]
     p = enc_state.combatants[selected_idx]
     messagebox.showinfo(f'{p['Name']}', f'Initiative for {p['Name']}: {p['Initiative']}')
     
-def open_enemy_manager(root: tk.Tk,
-                       selected_idx: int,
+def open_enemy_manager(listbox: tk.Listbox,
                        enc_state: encounter.EncounterStorage):
-    selected = enc_state.combatants[selected_idx]
+    if len(listbox.curselection()) == 0:
+        return
+    selected = enc_state.combatants[listbox.curselection()[0]]
     # Check if current enemy has encounter storage information
     try:
         # Create from past state
@@ -119,8 +126,7 @@ def clear_combat(root: tk.Tk,
         lstbox.delete(0, tk.END)
         enc_state.combatants = []
 
-def save_chars(root: tk.Tk,
-               enc_state: encounter.EncounterStorage):
+def save_chars(enc_state: encounter.EncounterStorage):
     pth = filedialog.asksaveasfilename(defaultextension='.enc', filetypes=[("encounter file", "*.enc")])
     if pth != None or pth != '':
         enc_state.save_state(pth)
@@ -140,7 +146,7 @@ def load_chars(root: tk.Tk,
 
 
 ## Window setup and mainloop
-VERSION = '1.1.1'
+VERSION = '1.2.0'
 # Window setup
 root = tk.Tk()
 root.geometry('500x350')
@@ -150,7 +156,7 @@ root.title(f'D&D Encounter Tracker -- {VERSION}')
 # Menu
 mainmenu = tk.Menu(root)
 mainmenu.add_command(label='Open', command=lambda: load_chars(root, enc_state))
-mainmenu.add_command(label='Save', command=lambda: save_chars(root, enc_state))
+mainmenu.add_command(label='Save', command=lambda: save_chars(enc_state))
 clear_menu = tk.Menu(mainmenu, tearoff=0)
 clear_menu.add_command(label='All', command=lambda: clear_all(root, enc_state))
 clear_menu.add_command(label='Characters', command=lambda: clear_characters(root, enc_state))
@@ -183,8 +189,8 @@ next_turn.pack(side=tk.LEFT, expand=True, fill='both')
 combat_panel = tk.Frame(root, highlightbackground='black', highlightthickness=1, width=250)
 combat_lb = tk.Label(combat_panel, text='Combat')
 combat_list = tk.Listbox(combat_panel, selectmode=tk.NONE, justify='center', height=17)
-combat_list.bind('<Double-1>', func=lambda e: display_selected_init(root, combat_list.curselection()[0], enc_state))
-combat_list.bind('<Button-3>', func=lambda e: open_enemy_manager(root, combat_list.curselection()[0], enc_state))
+combat_list.bind('<Double-1>', func=lambda e: display_selected_init(combat_list, enc_state))
+combat_list.bind('<Button-3>', func=lambda e: open_enemy_manager(combat_list, enc_state))
 remove_comb = tk.Button(combat_panel, text='Remove', height=0, command=lambda: remove_from_combat(root, combat_list.curselection()[0], enc_state))
 # Packing
 combat_panel.pack(side=tk.LEFT, expand=True, fill='both')
