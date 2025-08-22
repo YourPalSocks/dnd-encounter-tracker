@@ -1,14 +1,24 @@
 import tkinter as tk
 import tkinter.simpledialog
 
+import active_encounter as encounter
+
+
 class EnemyManagerWindow(tk.Tk):
     def __init__(self, 
-                input_dict: dict) :
+                input_dict: dict,
+                enc_state: encounter.EncounterStorage):
         self.enemy_name = input_dict['enemy_name']
         self.hp_max = input_dict['max_health']
         self.ac = input_dict['ac']
+        self.enc_state = enc_state
         super().__init__()
         self._setup()
+        if 'units' in input_dict:
+            for unit_hp in input_dict['units']:
+                self._create_enemy_widget(unit_hp)
+        # Event for on window close
+        self.protocol("WM_DELETE_WINDOW", self._on_destroy)
         
     def _setup(self):
         # Set up window
@@ -47,7 +57,14 @@ class EnemyManagerWindow(tk.Tk):
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
+    
+    def start(self):
         self.mainloop()
+        
+    def _on_destroy(self):
+        # Update old state info
+        self.enc_state.enemyStatus[self.enemy_name] = self._serialize()
+        self.destroy()
 
     def _update_enemy_selection(self, amt: int):
         old_val = self.enemyNum.get()
@@ -59,11 +76,12 @@ class EnemyManagerWindow(tk.Tk):
             self._create_enemy_widget()
         else:
             pass
-            # TODO: Remove
+            # TODO: Remove enemy with lowest HP, otherwise remove the last
 
-    def _create_enemy_widget(self):
+    def _create_enemy_widget(self, 
+                             cur_hp: int = None):
         enemy_widget = tk.Frame(master=self.enemyFrame)
-        enemyHealth = tk.IntVar(master=self, value=self.hp_max)
+        enemyHealth = tk.IntVar(master=enemy_widget, value=cur_hp if cur_hp != None else self.hp_max)
         # Embedded functions to update local tk.IntVar
         def __update_health(hp_var, amt, max):
             hp_var.set(hp_var.get() + amt)
@@ -88,4 +106,17 @@ class EnemyManagerWindow(tk.Tk):
         cur_health.pack(side=tk.LEFT)
         btn_right.pack(side=tk.LEFT, padx=(20, 0))
         enemy_widget.pack(pady=5)
+        
+    def _get_unit_health(self):
+        return [self.enemyFrame.winfo_children()[i].winfo_children()[0].cget('text') 
+              for i in range(len(self.enemyFrame.winfo_children()))]
+
+    def _serialize(self):
+        this_status = {
+            "enemy_name": self.enemy_name,
+            "ac": self.ac,
+            "max_health": self.hp_max,
+            "units": self._get_unit_health()
+        }
+        return this_status
     

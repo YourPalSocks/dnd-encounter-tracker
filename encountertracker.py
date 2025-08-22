@@ -4,6 +4,7 @@ from tkinter import simpledialog, messagebox, filedialog
 import active_encounter as encounter
 import enemy_manager
 
+
 ## Button Functions to communicate to active_encounter
 def add_character(root: tk.Tk,
                   enc_state: encounter.EncounterStorage):
@@ -52,8 +53,11 @@ def add_to_combat(root: tk.Tk,
             lstbox.itemconfig(0, bg='yellow')
 
 def remove_from_combat(root: tk.Tk,
-                       selected_idx: int,
+                       listbox: tk.Listbox,
                        enc_state: encounter.EncounterStorage):
+    if len(listbox.curselection()) == 0:
+        return
+    selected_idx = listbox.curselection()[0]
     enc_state.remove_combatant(selected_idx)
     # Update combat box
     lstbox: tk.Listbox = root.pack_slaves()[2].pack_slaves()[1]
@@ -91,14 +95,29 @@ def display_selected_init(listbox: tk.Listbox,
     
 def open_enemy_manager(listbox: tk.Listbox,
                        enc_state: encounter.EncounterStorage):
+    global SUB_WINS
+    
     if len(listbox.curselection()) == 0:
         return
     selected = enc_state.combatants[listbox.curselection()[0]]
+    # If a window for this enemy is already open, focus it
+    for win in SUB_WINS:
+        # Check if window exists, remove it if now
+        try:
+            win.winfo_exists()
+        except:
+            SUB_WINS.remove(win)
+            continue
+        if win.enemy_name == selected['Name']:
+            win.focus_force()
+            return
     # Check if current enemy has encounter storage information
     try:
-        # Create from past state
+        # Load from past state
         old_state = enc_state.enemyStatus[selected['Name']]
-        enemy_manager.EnemyManagerWindow(old_state)        
+        e_win = enemy_manager.EnemyManagerWindow(old_state, enc_state)
+        SUB_WINS.append(e_win)
+        e_win.start()
     except:
         if messagebox.askyesno('Enemy Creation', f'Create new enemy for {selected['Name']}'):
             stats = simpledialog.askstring('Enter Enemy Stats', 'Enter Max HP,AC')
@@ -106,7 +125,9 @@ def open_enemy_manager(listbox: tk.Listbox,
             state = {'enemy_name': selected['Name'],
                     'max_health': int(stats[0]),
                     'ac': int(stats[1])}
-            enemy_manager.EnemyManagerWindow(state)
+            e_win = enemy_manager.EnemyManagerWindow(state, enc_state)
+            SUB_WINS.append(e_win)
+            e_win.start()
 
 def clear_all(root: tk.Tk,
               enc_state: encounter.EncounterStorage):
@@ -117,14 +138,14 @@ def clear_characters(root: tk.Tk,
                      enc_state: encounter.EncounterStorage):
     lstbox: tk.Listbox = root.pack_slaves()[0].pack_slaves()[1]
     lstbox.delete(0, tk.END)
-    enc_state.characters = []
+    enc_state.clear_characters()
 
 def clear_combat(root: tk.Tk,
                  enc_state: encounter.EncounterStorage):
     if len(enc_state.combatants) > 1:
         lstbox: tk.Listbox = root.pack_slaves()[2].pack_slaves()[1]
         lstbox.delete(0, tk.END)
-        enc_state.combatants = []
+        enc_state.clear_combatants()
 
 def save_chars(enc_state: encounter.EncounterStorage):
     pth = filedialog.asksaveasfilename(defaultextension='.enc', filetypes=[("encounter file", "*.enc")])
@@ -147,6 +168,7 @@ def load_chars(root: tk.Tk,
 
 ## Window setup and mainloop
 VERSION = '1.2.0'
+SUB_WINS = []
 # Window setup
 root = tk.Tk()
 root.geometry('500x350')
@@ -191,7 +213,7 @@ combat_lb = tk.Label(combat_panel, text='Combat')
 combat_list = tk.Listbox(combat_panel, selectmode=tk.NONE, justify='center', height=17)
 combat_list.bind('<Double-1>', func=lambda e: display_selected_init(combat_list, enc_state))
 combat_list.bind('<Button-3>', func=lambda e: open_enemy_manager(combat_list, enc_state))
-remove_comb = tk.Button(combat_panel, text='Remove', height=0, command=lambda: remove_from_combat(root, combat_list.curselection()[0], enc_state))
+remove_comb = tk.Button(combat_panel, text='Remove', height=0, command=lambda: remove_from_combat(root, combat_list, enc_state))
 # Packing
 combat_panel.pack(side=tk.LEFT, expand=True, fill='both')
 combat_lb.pack()

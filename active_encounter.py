@@ -5,7 +5,7 @@ class EncounterStorage:
     def __init__(self):
         self.characters = [] # Displayed on left side
         self.combatants = [] # Displayed on right side
-        self.enemyStatus = [] # Status recorded by enemy manager
+        self.enemyStatus = {} # Status recorded by enemy manager
         self.cur_combat = 0
 
     def next_turn(self):
@@ -24,8 +24,18 @@ class EncounterStorage:
         self.combatants = sorted(self.combatants, key=lambda x:x['Initiative'], reverse=True)
 
     def remove_combatant(self, idx: int):
-        self.combatants.pop(idx)
+        c = self.combatants.pop(idx)
         self.combatants = sorted(self.combatants, key=lambda x:x['Initiative'], reverse=True)
+        if c['Name'] in self.enemyStatus:
+            self.enemyStatus.pop(c['Name'])
+        
+    def clear_characters(self):
+        self.characters = []
+        
+    def clear_combatants(self):
+        self.combatants = []
+        self.enemyStatus = {}
+        self.cur_combat = 0
 
     def save_state(self, f: str):
         # Prepare contents for saving. Save character list to file
