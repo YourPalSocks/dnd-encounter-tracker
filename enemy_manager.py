@@ -75,8 +75,7 @@ class EnemyManagerWindow(tk.Tk):
         if old_val < self.enemyNum.get():
             self._create_enemy_widget()
         else:
-            pass
-            # TODO: Remove enemy with lowest HP, otherwise remove the last
+            self._remove_enemy_widget()
 
     def _create_enemy_widget(self, 
                              cur_hp: int = None):
@@ -106,6 +105,15 @@ class EnemyManagerWindow(tk.Tk):
         cur_health.pack(side=tk.LEFT)
         btn_right.pack(side=tk.LEFT, padx=(20, 0))
         enemy_widget.pack(pady=5)
+        
+    def _remove_enemy_widget(self):
+        children = self.enemyFrame.winfo_children()
+        # Check if there's an enemy with 0 HP
+        for u_idx in range(len(self._get_unit_health())):
+            if self._get_unit_health()[u_idx] == 0:
+                 break
+        # Remove child at u_idx
+        children[u_idx].destroy()
         
     def _get_unit_health(self):
         return [self.enemyFrame.winfo_children()[i].winfo_children()[0].cget('text') 
